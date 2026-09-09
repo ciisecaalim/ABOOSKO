@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+.env*
+!.env.example
+
+# Local database files
+*.db
+*.db-journal
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
