@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { products } from "@/db/schema";
 import { and, asc, desc, gte, lte, sql, ilike, or } from "drizzle-orm";
 import { ensureSeeded } from "@/lib/ensure-seed";
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
     else if (sort === "newest") orderBy = desc(products.createdAt);
     else if (sort === "name") orderBy = asc(products.name);
 
-    const all = await db.select().from(products).where(where).orderBy(orderBy as never);
+    const all = await getDb().select().from(products).where(where).orderBy(orderBy as never);
     const total = all.length;
     const totalPages = Math.max(1, Math.ceil(total / perPage));
     const safePage = Math.min(page, totalPages);

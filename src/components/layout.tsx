@@ -1,8 +1,10 @@
 "use client";
+import { demoFetch, notify } from "@/lib/demo";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Modal } from "./feedback";
 import { Search, Heart, ShoppingBag, User, Menu, X, Truck, ShieldCheck, Lock, Trash2, ArrowRight, ArrowLeft, Flower2, Camera, AtSign, Share2, Play, MapPin, Phone, Mail, ChevronRight } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Button, QtyStepper } from "./ui";
@@ -10,10 +12,10 @@ import { Button, QtyStepper } from "./ui";
 export function AnnouncementBar() {
   return (
     <div className="burgundy-gradient text-white text-center">
-      <div className="max-w-[1440px] mx-auto px-4 py-2 flex items-center justify-center gap-6 text-[11px] tracking-[0.14em] uppercase font-medium">
+      <div className="max-w-[1440px] mx-auto px-4 py-2 flex items-center justify-center gap-6 text-[9px] sm:text-[11px] tracking-[0.14em] uppercase font-medium">
         <span className="hidden sm:flex items-center gap-2 opacity-90"><Truck size={13} /> Free delivery on orders over $50</span>
         <span className="hidden md:block w-px h-3 bg-white/20" />
-        <span className="flex items-center gap-2"><Flower2 size={13} className="text-[#e6c988]" /> Luxury fragrances for every occasion</span>
+        <span className="flex items-center justify-center gap-2"><Flower2 size={13} className="text-[#e6c988]" /> Luxury fragrances for every occasion</span>
         <span className="hidden md:block w-px h-3 bg-white/20" />
         <span className="hidden sm:block opacity-90">Complimentary gift wrapping</span>
       </div>
@@ -26,133 +28,47 @@ const NAV = [
   { label: "Shop", href: "/shop" },
   { label: "Gift Sets", href: "/shop?category=Gift Sets" },
   { label: "About", href: "/#story" },
-  { label: "Contact", href: "/#footer" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
-  const { cartCount, wishlist, setCartOpen, cartOpen } = useStore();
+  const router = useRouter();
+  const { cartCount, wishlist, setCartOpen } = useStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState("");
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 12);
-    window.addEventListener("scroll", fn);
-    fn();
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
   return (
-    <header className={`sticky top-0 z-40 transition-all ${scrolled ? "bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_-18px_rgba(82,10,34,0.35)]" : "bg-[#fffbf7]/90 backdrop-blur"}`}>
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10">
-        <div className="flex items-center justify-between h-[72px]">
-          {/* Mobile menu button */}
-          <button className="lg:hidden p-2 -ml-2 cursor-pointer" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-            <Menu size={22} className="text-[#520a22]" />
-          </button>
-
-          {/* Logo left */}
-          <Link href="/" className="flex shrink-0 flex-col items-center leading-none select-none">
-            <span className="flex items-center gap-2">
-              <Flower2 size={18} className="text-[#520a22]" />
-              <span className="font-serif text-[26px] sm:text-[30px] tracking-[0.18em] font-semibold text-[#520a22]">ABOOSTO</span>
-              <Flower2 size={18} className="text-[#520a22] scale-x-[-1]" />
-            </span>
-            <span className="text-[9px] tracking-[0.32em] uppercase text-[#a88436] mt-1 font-medium">Beauty in Every Scent</span>
+    <header className="site-header sticky top-0 z-40 bg-[#fffbf7] border-b border-[#520a22]/10">
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-10">
+        <div className="flex items-center justify-between gap-2 h-[68px] sm:h-[80px]">
+          <button className="lg:hidden nav-icon shrink-0" onClick={() => setMobileOpen(true)} aria-label="Open menu" aria-expanded={mobileOpen}><Menu size={21}/></button>
+          <Link href="/" className="brand-logo flex shrink-0 flex-col items-center leading-none" aria-label="ABOOSTO home">
+            <span className="flex items-center gap-2"><Flower2 size={18} className="hidden xl:block"/><span className="font-serif text-[19px] sm:text-[28px] tracking-[0.14em] font-semibold">ABOOSTO</span><Flower2 size={18} className="hidden xl:block"/></span>
+            <span className="text-[6px] sm:text-[8px] tracking-[0.22em] uppercase text-[#a88436] mt-1.5">Beauty in Every Scent</span>
           </Link>
-
-          {/* Left nav desktop */}
-          <nav className="hidden lg:flex items-center justify-center gap-10 flex-1 ml-10">
-            {NAV.slice(0, 2).map((n) => (
-              <Link key={n.label} href={n.href} className={`text-[13px] tracking-[0.12em] uppercase font-medium transition ${pathname === n.href ? "text-[#520a22]" : "text-[#2b2024]/70 hover:text-[#520a22]"}`}>
-                {n.label}
-              </Link>
-            ))}
+          <nav aria-label="Main navigation" className="hidden lg:flex items-center justify-center gap-6 xl:gap-9 flex-1">
+            {NAV.map(n => <Link key={n.label} href={n.href} aria-current={pathname === n.href ? "page" : undefined} className={"text-xs uppercase tracking-[0.12em] font-semibold py-3 hover:text-[#520a22] " + (pathname === n.href ? "text-[#520a22]" : "text-[#796970]")}>{n.label}</Link>)}
           </nav>
-
-          {/* Right */}
-          <div className="flex items-center justify-end gap-1 sm:gap-2 flex-1">
-            <nav className="hidden lg:flex items-center gap-10 mr-6">
-              {NAV.slice(2, 4).map((n) => (
-                <Link key={n.label} href={n.href} className="text-[13px] tracking-[0.12em] uppercase font-medium text-[#2b2024]/70 hover:text-[#520a22] transition">
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
-            <IconBtn label="Search" onClick={() => setSearchOpen((v) => !v)} active={searchOpen}>
-              <Search size={19} />
-            </IconBtn>
-            <Link href="/account" aria-label="Account">
-              <IconBtn label="Account">
-                <User size={19} />
-              </IconBtn>
-            </Link>
-            <Link href="/wishlist" aria-label="Wishlist" className="relative">
-              <IconBtn label="Wishlist">
-                <Heart size={19} />
-              </IconBtn>
-              {wishlist.length > 0 && <CountBadge n={wishlist.length} />}
-            </Link>
-            <button onClick={() => setCartOpen(!cartOpen)} aria-label="Cart" className="relative cursor-pointer">
-              <IconBtn label="Cart">
-                <ShoppingBag size={19} />
-              </IconBtn>
-              {cartCount > 0 && <CountBadge n={cartCount} />}
-            </button>
+          <div className="flex items-center gap-0 sm:gap-1 shrink-0">
+            <button className="nav-icon" aria-label="Search" aria-expanded={searchOpen} onClick={() => setSearchOpen(v => !v)}>{searchOpen ? <X size={19}/> : <Search size={19}/>}</button>
+            <Link className="nav-icon hidden sm:inline-flex" href="/account" aria-label="Account"><User size={19}/></Link>
+            <Link className="nav-icon relative" href="/wishlist" aria-label="Wishlist"><Heart size={19}/>{wishlist.length > 0 && <CountBadge n={wishlist.length}/>}</Link>
+            <button className="nav-icon relative" aria-label="Cart" onClick={() => setCartOpen(true)}><ShoppingBag size={19}/>{cartCount > 0 && <CountBadge n={cartCount}/>}</button>
           </div>
         </div>
-
-        {/* Search expand */}
-        {searchOpen && (
-          <div className="pb-4 fade-up">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                window.location.href = `/shop?q=${encodeURIComponent(q)}`;
-              }}
-              className="flex items-center gap-2 max-w-xl mx-auto bg-white border border-[#520a22]/15 rounded-full pl-5 pr-2 py-2 shadow-sm"
-            >
-              <Search size={17} className="text-[#8a767e] shrink-0" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search Chanel, Oud, Floral, Gift sets..."
-                className="flex-1 bg-transparent text-sm placeholder:text-[#8a767e]/70"
-              />
-              <Button size="sm" type="submit">Search</Button>
-            </form>
-          </div>
-        )}
+        {searchOpen && <form onSubmit={e => {e.preventDefault();router.push("/shop?q=" + encodeURIComponent(q.trim()));setSearchOpen(false);}} className="flex gap-2 pb-4 max-w-xl mx-auto fade-up">
+          <input autoFocus aria-label="Search fragrances" value={q} onChange={e => setQ(e.target.value)} placeholder="Search a fragrance, brand or scent..." className="lux-input min-w-0"/>
+          <Button type="submit" size="sm">Search</Button>
+        </form>}
       </div>
-      <div className="gold-line opacity-60" />
-
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-[#3d0718]/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-[300px] bg-[#fffbf7] shadow-2xl p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <span className="font-serif text-xl tracking-[0.2em] text-[#520a22] font-semibold">ABOOSTO</span>
-              <button onClick={() => setMobileOpen(false)} className="p-2 cursor-pointer" aria-label="Close menu"><X size={20} /></button>
-            </div>
-            <nav className="flex flex-col gap-1">
-              {NAV.map((n) => (
-                <Link key={n.label} href={n.href} onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 border-b border-[#520a22]/8 text-[15px] text-[#2b2024]">
-                  {n.label} <ChevronRight size={16} className="text-[#c9a24b]" />
-                </Link>
-              ))}
-              <Link href="/wishlist" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 border-b border-[#520a22]/8 text-[15px]">Wishlist <ChevronRight size={16} className="text-[#c9a24b]" /></Link>
-              <Link href="/account" onClick={() => setMobileOpen(false)} className="flex items-center justify-between py-3 border-b border-[#520a22]/8 text-[15px]">Account <ChevronRight size={16} className="text-[#c9a24b]" /></Link>
-            </nav>
-            <div className="mt-auto pt-6">
-              <p className="font-serif italic text-[#520a22] text-lg">More Than a Fragrance,</p>
-              <p className="font-serif italic text-[#520a22] text-lg">A Feeling.</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {mobileOpen && <Modal title="ABOOSTO" variant="drawer" onClose={() => setMobileOpen(false)}>
+        <nav aria-label="Mobile navigation" className="flex flex-col">
+          {[...NAV,{label:"Wishlist",href:"/wishlist"},{label:"Account",href:"/account"},{label:"Shopping bag",href:"/cart"}].map(n => <Link key={n.label} href={n.href} onClick={() => setMobileOpen(false)} className="flex items-center justify-between border-b border-[#520a22]/10 py-4 text-base text-[#520a22]">{n.label}<ChevronRight size={17}/></Link>)}
+        </nav>
+        <p className="font-serif italic mt-10 text-xl text-[#520a22]">More Than a Fragrance,<br/>A Feeling.</p>
+        <p className="text-xs mt-4 text-[#8a767e]">Interactive demo ? Your favorites stay in this browser.</p>
+      </Modal>}
     </header>
   );
 }
@@ -258,7 +174,7 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
     e.preventDefault();
     setError("");
     if (!email.includes("@")) { setError("Please enter a valid email."); return; }
-    const res = await fetch("/api/newsletter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+    const res = await demoFetch("/api/newsletter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
     if (res.ok) { setDone(true); setEmail(""); } else { setError("Something went wrong. Try again."); }
   }
   return (
@@ -275,12 +191,12 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
             </div>
           ) : (
             <form onSubmit={submit} className="mt-7 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email address" className="flex-1 rounded-full px-6 py-3.5 text-sm bg-white text-[#2b2024] placeholder:text-[#8a767e]/70" />
+              <input type="email" required aria-label="Newsletter email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email address" className="flex-1 rounded-full px-6 py-3.5 text-sm bg-white text-[#2b2024] placeholder:text-[#8a767e]/70" />
               <Button variant="gold" size="lg" type="submit">Subscribe</Button>
             </form>
           )}
           {error && <p className="text-[#f3c8cb] text-xs mt-3">{error}</p>}
-          <p className="text-white/40 text-[11px] mt-4 tracking-wide">By subscribing you agree to our privacy policy. Unsubscribe anytime.</p>
+          <p className="text-white/40 text-[11px] mt-4 tracking-wide">Demo subscription only. No emails are sent.</p>
         </div>
       </div>
     </section>
@@ -288,9 +204,11 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
 }
 
 export function Footer() {
+  const [social, setSocial] = useState(false);
   return (
     <footer id="footer" className="bg-[#2b1219] text-white">
       <div className="gold-line" />
+      {social && <Modal title="The ABOOSTO community" onClose={() => setSocial(false)}><p className="text-sm text-[#8a767e]">Explore our story or copy a link to share this demo.</p><div className="flex flex-wrap gap-3 mt-5"><Link href="/#story" onClick={() => setSocial(false)} className="rounded-full bg-[#520a22] text-white px-5 py-3 text-sm">Our story</Link><Button variant="outline" onClick={async () => {try {await navigator.clipboard.writeText(window.location.origin);notify("Demo link copied.");} catch {notify("Copy the address from your browser to share this demo.","info");}}}>Copy link</Button><Link href="/contact" onClick={() => setSocial(false)} className="text-[#520a22] underline p-3">Contact us</Link></div></Modal>}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 pt-14 pb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
           <div className="col-span-2 lg:col-span-2">
@@ -302,9 +220,9 @@ export function Footer() {
             <p className="text-white/60 text-sm mt-5 max-w-xs leading-relaxed">More Than a Fragrance, A Feeling. Curated luxury perfumes, gift rituals and signature oud — delivered with love.</p>
             <div className="flex gap-3 mt-6">
               {[Camera, AtSign, Share2, Play].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center text-white/70 hover:bg-[#520a22] hover:border-[#520a22] hover:text-white transition" aria-label="Social link">
+                <button key={i} onClick={() => setSocial(true)} className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center text-white/70 hover:bg-[#520a22] hover:border-[#520a22] hover:text-white transition" aria-label={["Instagram community", "Contact the boutique", "Share ABOOSTO", "Our fragrance story"][i]}>
                   <Icon size={15} />
-                </a>
+                </button>
               ))}
             </div>
           </div>
@@ -315,14 +233,14 @@ export function Footer() {
               <li><Link href="/shop?category=Men" className="hover:text-white transition">Men</Link></li>
               <li><Link href="/shop?category=Unisex" className="hover:text-white transition">Unisex</Link></li>
               <li><Link href="/shop?category=Gift Sets" className="hover:text-white transition">Gift Sets</Link></li>
-              <li><Link href="/shop" className="hover:text-white transition">Best Sellers</Link></li>
+              <li><Link href="/shop?flag=best" className="hover:text-white transition">Best Sellers</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-[12px] tracking-[0.22em] uppercase text-[#e6c988] font-semibold mb-5">Support</h4>
             <ul className="space-y-3 text-sm text-white/65">
               <li><Link href="/account" className="hover:text-white transition">Track Order</Link></li>
-              <li><Link href="/cart" className="hover:text-white transition">Shipping & Returns</Link></li>
+              <li><Link href="/shipping" className="hover:text-white transition">Shipping & Returns</Link></li>
               <li><Link href="/wishlist" className="hover:text-white transition">Wishlist</Link></li>
               <li><Link href="/#story" className="hover:text-white transition">Our Story</Link></li>
               <li><Link href="/checkout" className="hover:text-white transition">Secure Checkout</Link></li>
@@ -345,9 +263,9 @@ export function Footer() {
         <div className="border-t border-white/10 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-white/40">
           <p>© 2026 ABOOSTO. All rights reserved. Crafted with devotion.</p>
           <div className="flex items-center gap-5">
-            <a href="#" className="hover:text-white/80">Privacy</a>
-            <a href="#" className="hover:text-white/80">Terms</a>
-            <span className="flex items-center gap-1"><Lock size={11} /> Secure 256-bit SSL</span>
+            <a href="/privacy" className="hover:text-white/80">Privacy</a>
+            <a href="/terms" className="hover:text-white/80">Terms</a>
+            <span className="flex items-center gap-1"><Lock size={11} /> Interactive shopping demo</span>
           </div>
         </div>
       </div>

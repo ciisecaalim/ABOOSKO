@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { Feedback } from "@/components/feedback";
 import { StoreProvider } from "@/lib/store";
 import { AnnouncementBar, Navbar, Footer, CartDrawer } from "@/components/layout";
 
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="bg-[#fffbf7] text-[#2b2024] antialiased min-h-screen flex flex-col">
         <StoreProvider>
+          <Feedback />
           <AnnouncementBar />
           <Navbar />
           <CartDrawer />

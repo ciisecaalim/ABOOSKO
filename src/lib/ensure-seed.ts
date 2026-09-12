@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { products } from "@/db/schema";
 import { PRODUCTS } from "@/lib/data";
 import { sql } from "drizzle-orm";
@@ -9,11 +9,11 @@ export async function ensureSeeded(): Promise<void> {
   if (seeding) return seeding;
   seeding = (async () => {
     try {
-      const count = await db.select({ c: sql<number>`count(*)` }).from(products);
+      const count = await getDb().select({ c: sql<number>`count(*)` }).from(products);
       const n = Number(count[0]?.c || 0);
       if (n > 0) return;
       for (const p of PRODUCTS) {
-        await db
+        await getDb()
           .insert(products)
           .values({
             slug: p.slug,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { products } from "@/db/schema";
 import { eq, ne, sql } from "drizzle-orm";
 import { ensureSeeded } from "@/lib/ensure-seed";
@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ slug: stri
   const { slug } = await ctx.params;
   try {
     await ensureSeeded();
-    const rows = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
+    const rows = await getDb().select().from(products).where(eq(products.slug, slug)).limit(1);
     const product = rows[0];
     if (!product) {
       const fb = PRODUCTS.find((p) => p.slug === slug);
@@ -21,14 +21,14 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ slug: stri
         related: fill.map((p) => ({ slug: p.slug, name: p.name, brand: p.brand, price: p.price, compareAt: p.compareAt ?? null, rating: p.rating, reviewCount: p.reviewCount, image: p.image, badge: p.badge ?? null })),
       });
     }
-    const related = await db
+    const related = await getDb()
       .select()
       .from(products)
       .where(sql`${products.id} != ${product.id} AND (${products.category} = ${product.category} OR ${products.brand} = ${product.brand})`)
       .limit(4);
     let fill = related;
     if (fill.length < 4) {
-      const more = await db.select().from(products).where(ne(products.id, product.id)).limit(4 - fill.length);
+      const more = await getDb().select().from(products).where(ne(products.id, product.id)).limit(4 - fill.length);
       const seen = new Set(fill.map((r) => r.id));
       fill = [...fill, ...more.filter((m) => !seen.has(m.id))];
     }

@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { products, reviews } from "@/db/schema";
 import { PRODUCTS } from "@/lib/data";
 import { sql } from "drizzle-orm";
 
 export async function POST() {
   try {
-    await db.execute(sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
-    const existing = await db.select({ slug: products.slug }).from(products);
+    await getDb().execute(sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
+    const existing = await getDb().select({ slug: products.slug }).from(products);
     const have = new Set(existing.map((e) => e.slug));
     let inserted = 0;
     for (const p of PRODUCTS) {
       if (have.has(p.slug)) continue;
-      const [row] = await db
+      const [row] = await getDb()
         .insert(products)
         .values({
           slug: p.slug,
@@ -45,7 +45,7 @@ export async function POST() {
       inserted++;
       // seed 2 reviews for featured products
       if (p.isBestSeller || p.isFeatured) {
-        await db.insert(reviews).values([
+        await getDb().insert(reviews).values([
           {
             productId: row.id,
             author: "Amira Hassan",

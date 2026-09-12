@@ -1,4 +1,5 @@
 "use client";
+import { demoFetch, notify } from "@/lib/demo";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -23,7 +24,7 @@ type Rev = { id: string; author: string; rating: number; title: string; body: st
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
-  const { addToCart, toggleWishlist, isWished } = useStore();
+  const { addToCart, toggleWishlist, isWished, setCartOpen } = useStore();
   const [product, setProduct] = useState<FullProduct | null>(null);
   const [related, setRelated] = useState<CardProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,8 @@ export default function ProductPage() {
   const [posted, setPosted] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/products/${slug}`)
+    setLoading(true);setImg(0);setQty(1);setProduct(null);
+    demoFetch(`/api/products/${slug}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.product) {
@@ -47,13 +49,13 @@ export default function ProductPage() {
         }
       })
       .finally(() => setLoading(false));
-    fetch(`/api/reviews?slug=${slug}`).then((r) => r.json()).then((d) => setReviews(d.reviews || []));
+    demoFetch(`/api/reviews?slug=${slug}`).then((r) => r.json()).then((d) => setReviews(d.reviews || []));
   }, [slug]);
 
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
     if (!form.author || !form.body) return;
-    const res = await fetch("/api/reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, ...form }) });
+    const res = await demoFetch("/api/reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, ...form }) });
     if (res.ok) {
       const d = await res.json();
       setReviews((r) => [d.review, ...r]);
@@ -109,7 +111,7 @@ export default function ProductPage() {
           <h1 className="font-serif text-[clamp(2rem,4vw,2.9rem)] leading-[1.05] mt-2">{product.name}</h1>
           <div className="flex items-center gap-3 mt-3">
             <Rating value={ratingNum} size={15} />
-            <span className="text-sm text-[#8a767e]">{ratingNum.toFixed(1)} ({product.reviewCount || reviews.length * 40 + 120} reviews)</span>
+            <span className="text-sm text-[#8a767e]">{ratingNum.toFixed(1)} ({product.reviewCount + reviews.length} reviews)</span>
           </div>
           <div className="flex items-baseline gap-3 mt-4">
             <span className="font-serif text-[2.4rem] text-[#520a22] font-semibold">${product.price}</span>
@@ -151,7 +153,7 @@ export default function ProductPage() {
               <Heart size={19} className={wished ? "fill-current" : ""} />
             </button>
           </div>
-          <Button size="lg" variant="secondary" className="w-full mt-3" onClick={async () => { await addToCart(product.slug, size, qty); router.push("/checkout"); }}><Zap size={16} /> Buy Now — ${product.price * qty}</Button>
+          <Button size="lg" variant="secondary" className="w-full mt-3" onClick={async () => { if (await addToCart(product.slug, size, qty)) {setCartOpen(false);router.push("/checkout");} }}><Zap size={16} /> Buy Now — ${product.price * qty}</Button>
 
           {/* assurances */}
           <div className="grid grid-cols-3 gap-3 mt-6 text-center">
@@ -203,7 +205,7 @@ export default function ProductPage() {
                   {reviews.map((r) => (
                     <div key={r.id} className="border border-[#520a22]/10 rounded-2xl p-5">
                       <div className="flex items-center justify-between"><Rating value={r.rating} /><span className="text-[11px] text-[#8a767e]">{new Date(r.createdAt).toLocaleDateString()}</span></div>
-                      <p className="font-medium mt-2">{r.title || "Verified review"}</p>
+                      <p className="font-medium mt-2">{r.title || "Demo review"}</p>
                       <p className="text-sm text-[#2b2024]/75 mt-1 leading-relaxed">{r.body}</p>
                       <p className="text-xs text-[#8a767e] mt-3">— {r.author} {r.verified && <span className="text-emerald-700 font-medium">· Verified Buyer</span>}</p>
                     </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { orders, orderItems, cartItems, products } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -10,14 +10,14 @@ export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email") || "";
   try {
     if (email) {
-      const rows = await db.select().from(orders).where(eq(orders.email, email)).orderBy(desc(orders.createdAt)).limit(20);
+      const rows = await getDb().select().from(orders).where(eq(orders.email, email)).orderBy(desc(orders.createdAt)).limit(20);
       return NextResponse.json({ orders: rows });
     }
     if (sessionId) {
-      const rows = await db.select().from(orders).where(eq(orders.sessionId, sessionId)).orderBy(desc(orders.createdAt)).limit(20);
+      const rows = await getDb().select().from(orders).where(eq(orders.sessionId, sessionId)).orderBy(desc(orders.createdAt)).limit(20);
       const withItems = await Promise.all(
         rows.map(async (o) => {
-          const items = await db.select().from(orderItems).where(eq(orderItems.orderId, o.id));
+          const items = await getDb().select().from(orderItems).where(eq(orderItems.orderId, o.id));
           return { ...o, items };
         })
       );
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const { sessionId, email, firstName, lastName, address, city, zip, country, phone, shippingMethod, paymentMethod, discountCode } = body;
     if (!sessionId || !email) return NextResponse.json({ error: "Email and session required" }, { status: 400 });
 
-    const cart = await db
+    const cart = await getDb()
       .select({ qty: cartItems.qty, size: cartItems.size, price: products.price, name: products.name, image: products.image, productId: products.id })
       .from(cartItems)
       .innerJoin(products, eq(cartItems.productId, products.id))
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (code && CODES[code]) discount = Math.round((subtotal * CODES[code]) / 100);
     const total = Math.max(0, subtotal + shipBase - discount);
 
-    const [order] = await db
+    const [order] = await getDb()
       .insert(orders)
       .values({
         sessionId,
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       .returning();
 
     for (const l of cart) {
-      await db.insert(orderItems).values({
+      await getDb().insert(orderItems).values({
         orderId: order.id,
         productId: l.productId,
         name: l.name,
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         image: l.image,
       });
     }
-    await db.delete(cartItems).where(eq(cartItems.sessionId, sessionId));
+    await getDb().delete(cartItems).where(eq(cartItems.sessionId, sessionId));
     return NextResponse.json({ order });
   } catch (e) {
     console.error(e);

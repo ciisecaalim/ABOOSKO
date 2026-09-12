@@ -1,4 +1,5 @@
 "use client";
+import { demoFetch, notify, resetDemo } from "@/lib/demo";
 
 import React, { useEffect, useState } from "react";
 import { User, Package, MapPin, Heart, Settings, Check, Truck } from "lucide-react";
@@ -6,6 +7,7 @@ import { Breadcrumb } from "@/components/layout";
 import { Button, Field, Badge } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import Link from "next/link";
+import { Modal } from "@/components/feedback";
 
 type Order = {
   id: string; email: string; total: number; status: string; createdAt: string;
@@ -18,17 +20,21 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [profile, setProfile] = useState({ name: "", email: "", phone: "", address: "", city: "", country: "Somalia" });
   const [saved, setSaved] = useState(false);
+  const [preferences,setPreferences] = useState([true,true,true,false]);
+  const [confirmReset,setConfirmReset] = useState(false);
 
   useEffect(() => {
     if (!sessionId || sessionId === "server") return;
-    fetch(`/api/orders?sessionId=${sessionId}`).then((r) => r.json()).then((d) => setOrders(d.orders || []));
-    fetch(`/api/account?sessionId=${sessionId}`).then((r) => r.json()).then((d) => {
+    demoFetch(`/api/orders?sessionId=${sessionId}`).then((r) => r.json()).then((d) => setOrders(d.orders || []));
+    demoFetch(`/api/account?sessionId=${sessionId}`).then((r) => r.json()).then((d) => {
+      if(Array.isArray(d.account?.preferences)) setPreferences(d.account.preferences);
       if (d.account) setProfile({ name: d.account.name || "", email: d.account.email || "", phone: d.account.phone || "", address: d.account.address || "", city: d.account.city || "", country: d.account.country || "Somalia" });
     });
   }, [sessionId]);
 
   async function save() {
-    await fetch("/api/account", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, ...profile }) });
+    const response = await demoFetch("/api/account", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, ...profile, preferences }) });
+    if (!response.ok) return;
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -43,6 +49,7 @@ export default function AccountPage() {
 
   return (
     <div className="bg-[#fffbf7]">
+      {confirmReset && <Modal title="Reset this demo?" onClose={() => setConfirmReset(false)}><p className="text-sm text-[#8a767e]">This removes the demo bag, favorites, orders, reviews and profile saved in this browser.</p><div className="flex gap-3 mt-6"><Button variant="outline" onClick={() => setConfirmReset(false)}>Cancel</Button><Button onClick={() => {try {resetDemo();setOrders([]);setProfile({name:"",email:"",phone:"",address:"",city:"",country:"Somalia"});setPreferences([true,true,true,false]);setConfirmReset(false);notify("Demo data reset.");} catch {notify("Browser storage is unavailable.","error");}}}>Reset demo</Button></div></Modal>}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Account" }]} />
         <div className="flex items-center gap-5 mt-4">
@@ -167,10 +174,10 @@ export default function AccountPage() {
                 {["Email me about new arrivals", "SMS order updates", "Birthday gift surprises", "Members-only private sales"].map((s, i) => (
                   <label key={s} className="flex items-center justify-between border border-[#520a22]/10 rounded-2xl px-5 py-4 cursor-pointer">
                     <span className="text-sm">{s}</span>
-                    <input type="checkbox" defaultChecked={i < 3} className="w-5 h-5 accent-[#520a22]" />
+                    <input type="checkbox" checked={preferences[i]} onChange={e => setPreferences(previous => previous.map((v,index) => index === i ? e.target.checked : v))} className="w-5 h-5 accent-[#520a22]" />
                   </label>
                 ))}
-                <Button onClick={save}>Save Preferences</Button>
+                <Button onClick={save}>Save Preferences</Button><div className="border-t border-[#520a22]/10 pt-6"><h4 className="font-semibold">Demo data</h4><p className="text-sm text-[#8a767e] mt-2 mb-4">Your profile, favorites and orders are stored only in this browser.</p><Button variant="outline" onClick={() => setConfirmReset(true)}>Reset demo data</Button></div>
               </div>
             </div>
           )}

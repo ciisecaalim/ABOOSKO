@@ -1,9 +1,11 @@
 "use client";
+import { demoFetch, notify } from "@/lib/demo";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { Modal } from "@/components/feedback";
 import { Button, Badge, Rating } from "@/components/ui";
 import { ProductCard, CardProduct } from "@/components/product";
 import { BRANDS, SCENT_TYPES, IMG } from "@/lib/data";
@@ -29,6 +31,7 @@ function ShopInner() {
   const [category, setCategory] = useState(sp.get("category") || "");
   const [brands, setBrands] = useState<string[]>([]);
   const [scents, setScents] = useState<string[]>([]);
+  const [rating,setRating] = useState(0);
   const [maxPrice, setMaxPrice] = useState(350);
   const [sort, setSort] = useState("popular");
   const [page, setPage] = useState(1);
@@ -49,16 +52,17 @@ function ShopInner() {
     if (scents.length) p.set("scent", scents.join(","));
     p.set("maxPrice", String(maxPrice));
     p.set("sort", sort);
+    if(rating) p.set("rating",String(rating));
     if (flag) p.set("flag", flag);
     p.set("page", String(page));
     p.set("perPage", "9");
     return p.toString();
-  }, [q, category, brands, scents, maxPrice, sort, flag, page]);
+  }, [q, category, brands, scents, maxPrice, sort, flag, page, rating]);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fetch(`/api/products?${query}`)
+    demoFetch(`/api/products?${query}`)
       .then((r) => r.json())
       .then((d) => {
         if (!alive) return;
@@ -77,11 +81,11 @@ function ShopInner() {
   }
 
   function clearAll() {
-    setCategory(""); setBrands([]); setScents([]); setMaxPrice(350); setQ(""); setPage(1);
+    setRating(0);setSort("popular");setCategory(""); setBrands([]); setScents([]); setMaxPrice(350); setQ(""); setPage(1);
     router.push("/shop");
   }
 
-  const activeCount = (category ? 1 : 0) + brands.length + scents.length + (maxPrice < 350 ? 1 : 0) + (q ? 1 : 0);
+  const activeCount = (rating ? 1 : 0) + (category ? 1 : 0) + brands.length + scents.length + (maxPrice < 350 ? 1 : 0) + (q ? 1 : 0);
 
   const filters = (
     <div className="space-y-7 [&>div+div]:border-t [&>div+div]:border-[#520a22]/10 [&>div+div]:pt-6">
@@ -135,7 +139,7 @@ function ShopInner() {
         <h4 className="text-[12px] font-semibold tracking-[0.16em] uppercase text-[#2b2024] mb-3">Rating</h4>
         <div className="space-y-2">
           {[5, 4, 3].map((r) => (
-            <div key={r} className="flex items-center gap-2 text-sm text-[#8a767e]"><Rating value={r} /> <span className="text-xs">& up</span></div>
+            <button key={r} aria-pressed={rating === r} onClick={() => {setRating(rating === r ? 0 : r);setPage(1);}} className="flex items-center gap-2 text-sm text-[#8a767e]"><input type="radio" readOnly checked={rating===r} tabIndex={-1} className="accent-[#520a22]"/><Rating value={r} /> <span className="text-xs">& up</span></button>
           ))}
         </div>
       </div>
@@ -144,7 +148,7 @@ function ShopInner() {
         <img src={IMG.giftRoses} alt="Gift sets" className="w-full h-44 object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#3d0718]/85 to-transparent flex flex-col justify-end p-4 text-left">
           <p className="font-serif text-white text-lg leading-tight">Luxury Gifts<br />For Special Moments</p>
-          <span className="text-[#e6c988] text-xs mt-2 underline underline-offset-2">Shop Gift Sets</span>
+          <Link href="/shop?category=Gift%20Sets" onClick={() => setFiltersOpen(false)} className="text-[#e6c988] text-xs mt-2 underline underline-offset-2">Shop Gift Sets</Link>
         </div>
       </div>
     </div>
@@ -236,16 +240,7 @@ function ShopInner() {
       </div>
 
       {/* mobile filters drawer */}
-      {filtersOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-[#3d0718]/50" onClick={() => setFiltersOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-[min(320px,100vw)] bg-[#f3ede7] p-6 overflow-y-auto">
-            <div className="flex justify-end mb-4"><button onClick={() => setFiltersOpen(false)} className="p-2 cursor-pointer" aria-label="Close filters"><X size={20} /></button></div>
-            {filters}
-            <div className="mt-6"><Button className="w-full" onClick={() => setFiltersOpen(false)}>Show {total} Results</Button></div>
-          </div>
-        </div>
-      )}
+      {filtersOpen && <Modal title="Refine your ritual" variant="drawer" onClose={() => setFiltersOpen(false)}>{filters}<div className="mt-6"><Button className="w-full" onClick={() => setFiltersOpen(false)}>Show {total} Results</Button></div></Modal>}
     </div>
   );
 }

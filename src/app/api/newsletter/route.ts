@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { subscribers } from "@/db/schema";
 
 export async function POST(req: NextRequest) {
@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const { email } = await req.json();
     if (!email || !email.includes("@")) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     try {
-      await db.insert(subscribers).values({ email: email.toLowerCase().trim() });
+      await getDb().insert(subscribers).values({ email: email.toLowerCase().trim() });
     } catch {
       // already subscribed — treat as success
     }

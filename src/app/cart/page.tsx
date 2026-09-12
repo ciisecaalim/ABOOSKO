@@ -1,4 +1,5 @@
 "use client";
+import { demoFetch, notify } from "@/lib/demo";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -16,7 +17,7 @@ export default function CartPage() {
   const [recs, setRecs] = useState<CardProduct[]>([]);
 
   useEffect(() => {
-    fetch("/api/products?flag=best&perPage=4").then((r) => r.json()).then((d) => setRecs((d.items || []).map((p: Record<string, unknown>) => ({ ...p, rating: Number(p.rating ?? 4.5) }))));
+    demoFetch("/api/products?flag=best&perPage=4").then((r) => r.json()).then((d) => setRecs((d.items || []).map((p: Record<string, unknown>) => ({ ...p, rating: Number(p.rating ?? 4.5) }))));
   }, []);
 
   const discountPct = applied === "ABOOSTO15" ? 15 : applied === "WELCOME10" ? 10 : applied === "LUXE20" ? 20 : 0;
@@ -27,9 +28,9 @@ export default function CartPage() {
   function apply() {
     const c = code.toUpperCase().trim();
     if (["ABOOSTO15", "WELCOME10", "LUXE20"].includes(c)) {
-      setApplied(c); setCodeError("");
+      setApplied(c); setCodeError("");notify("Discount applied.");
     } else {
-      setCodeError("This code isn't valid. Try ABOOSTO15 for 15% off.");
+      notify("Invalid discount code.","error");setCodeError("This code isn't valid. Try ABOOSTO15 for 15% off.");
     }
   }
 

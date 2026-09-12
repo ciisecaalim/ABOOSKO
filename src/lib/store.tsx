@@ -1,4 +1,5 @@
 "use client";
+import { demoFetch, notify } from "@/lib/demo";
 
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
@@ -26,10 +27,11 @@ export type WishItem = {
 
 function getSessionId(): string {
   if (typeof window === "undefined") return "server";
-  let sid = localStorage.getItem("aboosto_sid");
+  let sid: string | null;
+  try { sid = localStorage.getItem("aboosto_sid"); } catch {return "demo";}
   if (!sid) {
     sid = `s_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
-    localStorage.setItem("aboosto_sid", sid);
+    try {localStorage.setItem("aboosto_sid", sid);} catch {return "demo";}
   }
   return sid;
 }
@@ -44,7 +46,7 @@ type StoreCtx = {
   subtotal: number;
   loading: boolean;
   refresh: () => Promise<void>;
-  addToCart: (slug: string, size?: string, qty?: number) => Promise<void>;
+  addToCart: (slug: string, size?: string, qty?: number) => Promise<boolean>;
   updateQty: (id: string, qty: number) => Promise<void>;
   removeLine: (id: string) => Promise<void>;
   toggleWishlist: (slug: string) => Promise<boolean>;
@@ -71,8 +73,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const sid = getSessionId();
     try {
       const [c, w] = await Promise.all([
-        fetch(`/api/cart?sessionId=${sid}`).then((r) => r.json()),
-        fetch(`/api/wishlist?sessionId=${sid}`).then((r) => r.json()),
+        demoFetch(`/api/cart?sessionId=${sid}`).then((r) => r.json()),
+        demoFetch(`/api/wishlist?sessionId=${sid}`).then((r) => r.json()),
       ]);
       if (c?.lines) setCart(c.lines);
       if (w?.items) setWishlist(w.items);
@@ -85,12 +87,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refresh();
+    window.addEventListener("storage", refresh);
+    window.addEventListener("aboosto:changed", refresh);
+    return () => {window.removeEventListener("storage",refresh);window.removeEventListener("aboosto:changed",refresh);};
   }, [refresh]);
 
   const addToCart = useCallback(
     async (slug: string, size = "50 ml", qty = 1) => {
       const sid = getSessionId();
-      const res = await fetch("/api/cart", {
+      const res = await demoFetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: sid, slug, size, qty }),
@@ -102,13 +107,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (found) setLastAdded(found);
         setCartOpen(true);
       }
+      return res.ok;
     },
     []
   );
 
   const updateQty = useCallback(async (id: string, qty: number) => {
     const sid = getSessionId();
-    const res = await fetch("/api/cart", {
+    const res = await demoFetch("/api/cart", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId: sid, id, qty }),
@@ -119,7 +125,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const removeLine = useCallback(async (id: string) => {
     const sid = getSessionId();
-    const res = await fetch(`/api/cart?sessionId=${sid}&id=${id}`, { method: "DELETE" });
+    const res = await demoFetch(`/api/cart?sessionId=${sid}&id=${id}`, { method: "DELETE" });
     const data = await res.json();
     if (data?.lines) setCart(data.lines);
   }, []);
@@ -127,7 +133,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const toggleWishlist = useCallback(
     async (slug: string) => {
       const sid = getSessionId();
-      const res = await fetch("/api/wishlist", {
+      const res = await demoFetch("/api/wishlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: sid, slug }),

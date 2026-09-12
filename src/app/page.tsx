@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Truck, Lock, Gem, Headset, Play, Quote } from "lucide-react";
-import { db } from "@/db";
-import { products } from "@/db/schema";
-import { sql } from "drizzle-orm";
+
+
+
 import { PRODUCTS, CATEGORIES, TESTIMONIALS, IMG } from "@/lib/data";
 import { Button, Badge, Rating, SectionHeading } from "@/components/ui";
 import { ProductCard } from "@/components/product";
@@ -16,16 +16,6 @@ type P = {
 };
 
 async function getProducts(): Promise<P[]> {
-  try {
-    const rows = await db.select().from(products).limit(24);
-    if (rows.length) {
-      return rows.map((r) => ({
-        slug: r.slug, name: r.name, brand: r.brand, price: r.price,
-        compareAt: r.compareAt, rating: r.rating ? Number(r.rating) : 4.5,
-        reviewCount: r.reviewCount, image: r.image, badge: r.badge,
-      }));
-    }
-  } catch { /* fallback */ }
   return PRODUCTS.map((p) => ({
     slug: p.slug, name: p.name, brand: p.brand, price: p.price,
     compareAt: p.compareAt ?? null, rating: p.rating, reviewCount: p.reviewCount,
@@ -34,10 +24,9 @@ async function getProducts(): Promise<P[]> {
 }
 
 export default async function HomePage() {
-  try { await db.execute(sql`select 1`); } catch { /* ignore */ }
   const all = await getProducts();
-  const best = [...all].slice(0, 4);
-  const arrivals = [...all].reverse().slice(0, 4);
+  const best = all.filter(p => PRODUCTS.find(x => x.slug === p.slug)?.isBestSeller).slice(0, 4);
+  const arrivals = all.filter(p => PRODUCTS.find(x => x.slug === p.slug)?.isNewArrival).slice(0, 4);
   const offers = all.filter((p) => p.compareAt).slice(0, 4);
 
   return (
@@ -152,9 +141,9 @@ export default async function HomePage() {
               <img src={IMG.elegantWoman} alt="Luxury lifestyle" className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#3d0718] via-[#3d0718]/20 to-transparent hidden lg:block" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#3d0718]/60 to-transparent lg:hidden" />
-              <button aria-label="Play film" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/40 flex items-center justify-center text-white hover:scale-110 transition cursor-pointer">
+              <Link href="/#story" aria-label="Explore our fragrance story" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/40 flex items-center justify-center text-white hover:scale-110 transition cursor-pointer">
                 <Play size={20} className="fill-white ml-1" />
-              </button>
+              </Link>
             </div>
           </div>
         </div>

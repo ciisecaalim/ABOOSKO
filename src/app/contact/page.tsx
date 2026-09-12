@@ -1,0 +1,10 @@
+"use client";
+import {useState} from "react";
+import Link from "next/link";
+import {Button,Field} from "@/components/ui";
+import {Breadcrumb} from "@/components/layout";
+import {notify} from "@/lib/demo";
+export default function ContactPage() {
+  const [sent,setSent] = useState(false);
+  return <div className="max-w-[1000px] mx-auto px-5 py-10"><Breadcrumb items={[{label:"Home",href:"/"},{label:"Contact"}]}/><p className="uppercase tracking-[0.2em] text-xs text-[#a88436] mt-8">The ABOOSTO concierge</p><h1 className="font-serif text-4xl mt-3">Let?s find your next ritual.</h1><div className="grid md:grid-cols-2 gap-10 mt-8"><div className="text-[#8a767e] text-sm leading-7"><p>Ask about a fragrance, a thoughtful gift or your demo order.</p><p className="mt-5">Maka Al-Mukarama Road<br/>Mogadishu, Somalia</p><p className="mt-5">This is an interactive demo. Messages are saved in this browser; they are not sent to a support team.</p><div className="flex flex-wrap gap-4 mt-6 text-[#520a22] underline"><Link href="/shipping">Shipping & returns</Link><Link href="/account">View demo orders</Link></div></div><form onSubmit={e=>{e.preventDefault();const form=e.currentTarget;const data=Object.fromEntries(new FormData(form));try {const previous=JSON.parse(localStorage.getItem("aboosto_demo_messages")||"[]");localStorage.setItem("aboosto_demo_messages",JSON.stringify([...previous,{...data,date:new Date().toISOString()}]));setSent(true);notify("Your demo message was saved. No email was sent.");form.reset();}catch{notify("Unable to save the message. Check browser storage.","error");}}} className="bg-white luxury-card p-6 rounded-2xl space-y-4"><Field label="Your name"><input name="name" required className="lux-input"/></Field><Field label="Email address"><input name="email" type="email" required className="lux-input"/></Field><Field label="How can we help?"><textarea name="message" required rows={5} className="lux-input"/></Field><Button type="submit" className="w-full">Save demo message</Button>{sent&&<p role="status" className="text-sm text-emerald-700">Message saved. Thank you for trying the demo.</p>}</form></div></div>;
+}
